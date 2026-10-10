@@ -35,7 +35,17 @@ if (!await store.getWeixinAccountProfile("byterlife")) {
   });
   // Initial setup does not silently enable unattended runs.
   const schedule = await store.getSchedule(DEFAULT_ARTICLE_PROFILE_ID);
-  if (schedule) await store.saveSchedule({ ...schedule, enabled: false });
+  await store.saveSchedule(
+    schedule ? { ...schedule, enabled: false } : {
+      featureKey: "article",
+      profileId: DEFAULT_ARTICLE_PROFILE_ID,
+      name: "ByterLife 内容预演",
+      enabled: false,
+      cron: "30 20 * * *",
+      timezone: "Asia/Shanghai",
+      dryRun: true,
+    },
+  );
   console.log("ByterLife 运营配置已建立；初始定时任务关闭。");
 } else {
   console.log("ByterLife 已存在，保留已有运营配置与定时设置。");

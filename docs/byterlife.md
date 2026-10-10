@@ -31,6 +31,13 @@ key；管理启动不会打印密钥，不启动调度，也不执行模型或�
 
 ## 验证
 
+2026-10-10 已实际启动本地管理服务，验证控制台登录、ByterLife
+账号显示、编辑保存及刷新后持久化。修复空数据源阻止初始化的问题；未选数据源时可以先维护配置，实际生成仍要求有效来源和模型配置。
+
+本地可双击 `scripts/start-byterlife.command`
+重新启动（需先完成上述配置），运行期间保持终端打开。默认地址为
+`http://127.0.0.1:8000/dashboard/`。只在本机监听；本轮没有配置开机自动启动。
+
 ```sh
 deno task test:byterlife
 deno check scripts/manage.ts scripts/setup.byterlife.ts trendpublish.config.byterlife.example.ts
