@@ -613,10 +613,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-export default async function startServer(port = 8000) {
-  Deno.serve({ port }, handler);
-  logger.info(`服务监听在 http://0.0.0.0:${port}`);
-  logger.info("dashboard 地址: http://localhost:8000/dashboard");
-  const config = await getAppConfig();
-  logger.info("api key: " + config.server.apiKey);
+export default async function startServer(port = 8000, hostname = "0.0.0.0") {
+  Deno.serve({ port, hostname }, handler);
+  logger.info(`服务监听在 http://${hostname}:${port}`);
+  logger.info(`dashboard 地址: http://localhost:${port}/dashboard`);
 }

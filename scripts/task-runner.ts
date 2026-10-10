@@ -17,6 +17,7 @@ const CHECK_FILES = [
 ];
 
 const TEST_FILES = [
+  "src/prompts/prompt-profile.test.ts",
   "src/architecture-boundaries.test.ts",
   "src/release-readiness.test.ts",
   "src/utils/config/define-config.test.ts",

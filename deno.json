@@ -1,6 +1,9 @@
 {
   "nodeModulesDir": "auto",
   "tasks": {
+    "manage": "deno run -A scripts/manage.ts",
+    "byterlife:setup": "deno run -A scripts/setup.byterlife.ts",
+    "test:byterlife": "deno test -A src/prompts/prompt-profile.test.ts",
     "dev": "deno run -A scripts/task-runner.ts dev",
     "doctor": "deno run -A scripts/task-runner.ts doctor",
     "verify": "deno run -A scripts/task-runner.ts verify",

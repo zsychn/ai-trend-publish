@@ -47,6 +47,7 @@ Thumbs.db
 # Environment variables
 .env
 trendpublish.config.ts
+.byterlife-api-key
 config/trendpublish.config.ts
 .env.local
 .env.*.local
