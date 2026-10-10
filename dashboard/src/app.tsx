@@ -32,6 +32,7 @@ import { ArticleQualityWorkspace } from "./pages/quality.tsx";
 import { RuntimeConfigPanel } from "./pages/runtime-config.tsx";
 import { RunsWorkspace } from "./pages/runs.tsx";
 import "./styles.css";
+import { DailyDesk } from "./pages/daily-desk.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +73,7 @@ function cx(...values: Array<string | false | null | undefined>) {
 }
 
 function App() {
+  const [advanced, setAdvanced] = useState(false);
   const [apiKey, setApiKey] = useState(() => {
     const saved = localStorage.getItem(API_KEY_STORAGE) ??
       sessionStorage.getItem(API_KEY_STORAGE) ?? "";
@@ -234,6 +236,17 @@ function App() {
 
   if (!apiKey) return <LoginView onLogin={saveApiKey} error={loginError} />;
 
+  if (!advanced) {
+    return (
+      <DailyDesk
+        apiKey={apiKey}
+        runs={runs}
+        onAdvanced={() => setAdvanced(true)}
+        onRefresh={refresh}
+      />
+    );
+  }
+
   return (
     <AppShell
       className="tp-surface text-[#0f172a]"
@@ -277,6 +290,9 @@ function App() {
           </Group>
 
           <Group gap={6} wrap="nowrap">
+            <Button size="sm" onClick={() => setAdvanced(false)}>
+              返回日常工作台
+            </Button>
             <label className="hidden h-[32px] items-center gap-2 rounded-md border border-[#cbd5e1] bg-white px-2.5 text-xs text-[#475569] sm:flex">
               <input
                 className="size-3.5 accent-[#2563eb]"

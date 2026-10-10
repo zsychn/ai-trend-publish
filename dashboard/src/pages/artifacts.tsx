@@ -143,6 +143,7 @@ export function ArtifactPreview(
   const [objectUrl, setObjectUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!artifact) return;
@@ -150,6 +151,7 @@ export function ArtifactPreview(
     let active = true;
     setLoading(true);
     setError("");
+    setCopied(false);
     setContent("");
     setObjectUrl("");
     apiArtifact(
@@ -203,7 +205,7 @@ export function ArtifactPreview(
           </div>
           {isHtml && (
             <p className="tp-muted mb-3 text-sm">
-              需要复制正文时，请先下载 HTML 文件并打开。
+              点击下方“复制正文”，可带格式粘贴到公众号编辑器。
             </p>
           )}
           <div className="min-h-0 flex-1 overflow-auto rounded-md bg-[#f8fafc] p-3">
@@ -238,6 +240,43 @@ export function ArtifactPreview(
             )}
           </div>
           <div className="mt-3 flex items-center justify-end gap-4">
+            {!loading && !error && isHtml && content && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const doc = new DOMParser().parseFromString(
+                      content,
+                      "text/html",
+                    );
+                    const article = doc.querySelector("article") ?? doc.body;
+                    if (
+                      typeof ClipboardItem !== "undefined" &&
+                      navigator.clipboard.write
+                    ) {
+                      await navigator.clipboard.write([
+                        new ClipboardItem({
+                          "text/html": new Blob([article.innerHTML], {
+                            type: "text/html",
+                          }),
+                          "text/plain": new Blob([article.textContent ?? ""], {
+                            type: "text/plain",
+                          }),
+                        }),
+                      ]);
+                    } else {
+                      await navigator.clipboard.writeText(
+                        article.textContent ?? "",
+                      );
+                    }
+                    setCopied(true);
+                  } catch {
+                    setError("复制未成功，请下载 HTML 文件，打开后复制正文。");
+                  }
+                }}
+              >
+                {copied ? "正文已复制" : "复制正文"}
+              </Button>
+            )}
             {!loading && !error && objectUrl && (
               <a
                 className="text-sm text-blue-600 underline"

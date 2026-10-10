@@ -16,6 +16,7 @@ import type {
   WeixinArticleWorkflowInput,
 } from "@src/app/weixin-article/workflow.definition.ts";
 import { Logger } from "@zilla/logger";
+import { parsePublication } from "@src/app/weixin-article/publication-record.ts";
 
 const logger = new Logger("server");
 
@@ -279,6 +280,38 @@ async function handleRunsRequest(req: Request, pathname: string) {
   }
 
   const feedbackMatch = pathname.match(/^\/api\/runs\/([^/]+)\/feedback$/);
+  const publicationMatch = pathname.match(
+    /^\/api\/runs\/([^/]+)\/publication$/,
+  );
+  if (publicationMatch) {
+    const runId = decodeURIComponent(publicationMatch[1]);
+    if (!/^[a-zA-Z0-9-]+$/.test(runId)) {
+      return jsonResponse({ error: "无效的内容 ID" }, 400);
+    }
+    const run = await stores.runStateStore.getRun(runId);
+    if (!run) return jsonResponse({ error: "内容不存在" }, 404);
+    const key = `publications/${runId}.json`;
+    if (req.method === "GET") {
+      const object = await stores.artifactStore.getObject(key);
+      return jsonResponse({
+        publication: object
+          ? JSON.parse(new TextDecoder().decode(object.body))
+          : null,
+      });
+    }
+    if (req.method === "PUT") {
+      try {
+        const publication = parsePublication(await req.json());
+        await stores.artifactStore.putJson(key, publication);
+        return jsonResponse({ publication });
+      } catch (error) {
+        return jsonResponse({
+          error: error instanceof Error ? error.message : "记录无效",
+        }, 400);
+      }
+    }
+    return jsonResponse({ error: "不支持的操作" }, 405);
+  }
   if (feedbackMatch) {
     const runId = decodeURIComponent(feedbackMatch[1]);
     if (req.method === "GET") {
