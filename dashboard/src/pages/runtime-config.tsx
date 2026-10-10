@@ -55,6 +55,7 @@ const TEMPLATE_OPTIONS = [
 ];
 const PROMPT_PROFILE_OPTIONS = [
   "technology",
+  "life",
   "general",
   "business",
   "product",

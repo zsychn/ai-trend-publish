@@ -661,7 +661,15 @@ async function validateArticlePatch(
     validateStringEnum(
       renderer.promptProfile,
       "article.renderer.promptProfile",
-      ["technology", "general", "business", "product", "developer", "research"],
+      [
+        "technology",
+        "life",
+        "general",
+        "business",
+        "product",
+        "developer",
+        "research",
+      ],
       issues,
     );
     await validateCapabilityReference(

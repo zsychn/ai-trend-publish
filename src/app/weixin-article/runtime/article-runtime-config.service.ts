@@ -739,6 +739,9 @@ export function normalizeFetchGroups(
 export function parseSourcesForRuntime(
   sources: string[],
 ): RuntimeArticleSourceInput[] {
+  // The configuration UI must be usable before sources are selected. Actual
+  // generation still uses parseArticleSources and requires a nonempty list.
+  if (sources.length === 0) return [];
   return parseArticleSources(sources).map((source, index) => ({
     raw: source.raw,
     url: source.url,

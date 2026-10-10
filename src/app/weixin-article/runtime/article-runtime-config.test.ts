@@ -42,6 +42,16 @@ Deno.test("runtime config seeds article profile and shared capabilities", async 
   assertEquals(detail.schedule?.cron, "0 3 * * *");
 });
 
+Deno.test("management can initialize and read an account with no sources yet", async () => {
+  const store = new SQLiteRuntimeConfigStore(":memory:");
+  const config = createConfig();
+  config.features.article.sources = [];
+  await seedArticleRuntimeConfig(store, config);
+  const detail = await getArticleRuntimeProfileDetail(store, config);
+  assertEquals(detail.sources, []);
+  assertEquals(parseSourcesForRuntime([]), []);
+});
+
 Deno.test("runtime config merges TS config sources and fetch groups into existing profiles", async () => {
   const store = new SQLiteRuntimeConfigStore(":memory:");
   const config = createConfig();

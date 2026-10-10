@@ -143,12 +143,15 @@ export function ArtifactPreview(
   const [objectUrl, setObjectUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!artifact) return;
     let nextObjectUrl = "";
+    let active = true;
     setLoading(true);
     setError("");
+    setCopied(false);
     setContent("");
     setObjectUrl("");
     apiArtifact(
@@ -157,18 +160,26 @@ export function ArtifactPreview(
     )
       .then(async (response) => {
         const blob = await response.blob();
-        if (artifact.contentType.includes("image/")) {
-          nextObjectUrl = URL.createObjectURL(blob);
-          setObjectUrl(nextObjectUrl);
+        if (!active) return;
+        nextObjectUrl = URL.createObjectURL(blob);
+        setObjectUrl(nextObjectUrl);
+        if (
+          artifact.contentType.includes("image/") ||
+          artifact.contentType.includes("zip")
+        ) {
           return;
         }
-        setContent(await blob.text());
+        const text = await blob.text();
+        if (active) setContent(text);
       })
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : String(err))
-      )
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
+      active = false;
       if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
     };
   }, [artifact, apiKey]);
@@ -176,6 +187,7 @@ export function ArtifactPreview(
   const isHtml = artifact?.contentType.includes("html") ?? false;
   const isJson = artifact?.contentType.includes("json") ?? false;
   const isImage = artifact?.contentType.includes("image/") ?? false;
+  const isZip = artifact?.contentType.includes("zip") ?? false;
 
   return (
     <Drawer
@@ -191,6 +203,11 @@ export function ArtifactPreview(
           <div className="tp-muted mb-3 truncate text-xs">
             {artifact.contentType} · {artifact.key}
           </div>
+          {isHtml && (
+            <p className="tp-muted mb-3 text-sm">
+              点击下方“复制正文”，可带格式粘贴到公众号编辑器。
+            </p>
+          )}
           <div className="min-h-0 flex-1 overflow-auto rounded-md bg-[#f8fafc] p-3">
             {loading && <EmptyState>正在加载产物...</EmptyState>}
             {error && (
@@ -213,13 +230,62 @@ export function ArtifactPreview(
                 sandbox=""
               />
             )}
-            {!loading && !error && !isImage && !isHtml && (
+            {!loading && !error && isZip && (
+              <EmptyState>发布包已就绪，点击下方“下载文件”保存。</EmptyState>
+            )}
+            {!loading && !error && !isImage && !isHtml && !isZip && (
               <pre className="tp-code min-h-[74vh] overflow-auto rounded-md border p-4 text-xs leading-5">
                 {isJson ? prettyJson(content) : content}
               </pre>
             )}
           </div>
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex items-center justify-end gap-4">
+            {!loading && !error && isHtml && content && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const doc = new DOMParser().parseFromString(
+                      content,
+                      "text/html",
+                    );
+                    const article = doc.querySelector("article") ?? doc.body;
+                    if (
+                      typeof ClipboardItem !== "undefined" &&
+                      navigator.clipboard.write
+                    ) {
+                      await navigator.clipboard.write([
+                        new ClipboardItem({
+                          "text/html": new Blob([article.innerHTML], {
+                            type: "text/html",
+                          }),
+                          "text/plain": new Blob([article.textContent ?? ""], {
+                            type: "text/plain",
+                          }),
+                        }),
+                      ]);
+                    } else {
+                      await navigator.clipboard.writeText(
+                        article.textContent ?? "",
+                      );
+                    }
+                    setCopied(true);
+                  } catch {
+                    setError("复制未成功，请下载 HTML 文件，打开后复制正文。");
+                  }
+                }}
+              >
+                {copied ? "正文已复制" : "复制正文"}
+              </Button>
+            )}
+            {!loading && !error && objectUrl && (
+              <a
+                className="text-sm text-blue-600 underline"
+                href={objectUrl}
+                download={artifact.key.split("/").pop()}
+              >
+                下载文件
+              </a>
+            )}
             <Button variant="ghost" onClick={onClose}>关闭</Button>
           </div>
         </div>

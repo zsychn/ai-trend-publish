@@ -1,5 +1,6 @@
 export type PromptProfileName =
   | "technology"
+  | "life"
   | "general"
   | "business"
   | "product"
@@ -22,6 +23,42 @@ export interface PromptProfile {
 }
 
 const PROMPT_PROFILES: Record<PromptProfileName, PromptProfile> = {
+  life: {
+    id: "life",
+    label: "生活与思考",
+    audience:
+      "希望保持健康、快乐和思维常青的普通成年人，关注工作之外的生活、爱好和关系",
+    editorialTone: "温暖、直接、克制，从具体生活场景写起，避免说教和空泛励志",
+    selectionFocus: [
+      "普通人经常遇到的具体困扰",
+      "能带走一个小做法的问题",
+      "运动、爱好、休息与关系中的真实取舍",
+    ],
+    contentAngles: [
+      "用读者熟悉的场景说明问题",
+      "解释取舍而不替读者诊断",
+      "给出可试的小行动及适用边界",
+    ],
+    preferredTopics: [
+      "工作与生活边界",
+      "爱好和日常运动",
+      "家务与关系分工",
+      "休息和注意力",
+    ],
+    lowValueSignals: [
+      "虚构亲身经历、读者留言或数据",
+      "无来源的心理学和健康结论",
+      "制造焦虑的万能建议",
+      "搬运或只改写爆款标题",
+    ],
+    titleGuidance:
+      "用具体问题或场景形成吸引力，标题与正文一致，不诊断读者、不夸大效果。",
+    layoutGuidance:
+      "短段落、清晰留白，用少量小标题推进问题，不把生活观察硬写成新闻速递。",
+    imageGuidance:
+      "温暖的日常生活编辑插画，奶油白、深绿和少量橙色，无虚构数据图。",
+    coverGuidance: "工作之外的生活、休息、爱好与关系，构图简洁，主体清楚。",
+  },
   technology: {
     id: "technology",
     label: "AI 科技趋势",
@@ -251,6 +288,17 @@ export function getChineseNewsroomStyleGuide(
   profile?: PromptProfileName,
 ): string {
   const resolved = resolvePromptProfile(profile);
+  if (resolved.id === "life") {
+    return [
+      "中文生活内容写作指南：",
+      "从一个具体场景或困扰开篇，不强行添加新闻时效。",
+      "区分生活观察、建议和事实；事实与引用需要来源，健康结论需核验。",
+      "不虚构第一人称体验、专家、研究、读者反馈或收益。",
+      "建议要小而具体，说明现实约束，避免把问题归咎于读者不够努力。",
+      "短段落，每段推进一个意思，减少口号、模板腔和强行煽情。",
+      "结尾可以留一个容易回答的生活问题，不强迫读者互动。",
+    ].join("\n- ");
+  }
   const commonRules = [
     "开头第一段必须回答“这事为什么现在值得看”，不要用欢迎语、总述腔或背景铺垫开场。",
     "优先写具体主体、动作、结果、数字、限制和影响对象，少写抽象趋势判断。",

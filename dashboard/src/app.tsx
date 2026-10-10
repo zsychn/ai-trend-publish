@@ -32,6 +32,7 @@ import { ArticleQualityWorkspace } from "./pages/quality.tsx";
 import { RuntimeConfigPanel } from "./pages/runtime-config.tsx";
 import { RunsWorkspace } from "./pages/runs.tsx";
 import "./styles.css";
+import { DailyDesk } from "./pages/daily-desk.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,9 +73,14 @@ function cx(...values: Array<string | false | null | undefined>) {
 }
 
 function App() {
-  const [apiKey, setApiKey] = useState(() =>
-    sessionStorage.getItem(API_KEY_STORAGE) ?? ""
-  );
+  const [advanced, setAdvanced] = useState(false);
+  const [apiKey, setApiKey] = useState(() => {
+    const saved = localStorage.getItem(API_KEY_STORAGE) ??
+      sessionStorage.getItem(API_KEY_STORAGE) ?? "";
+    if (saved) localStorage.setItem(API_KEY_STORAGE, saved);
+    sessionStorage.removeItem(API_KEY_STORAGE);
+    return saved;
+  });
   const [selectedConfigProfileId, setSelectedConfigProfileId] = useState("");
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | RunStatus>("all");
@@ -134,13 +140,14 @@ function App() {
     (queryError instanceof Error ? queryError.message : "");
 
   const saveApiKey = useCallback((nextApiKey: string) => {
-    sessionStorage.setItem(API_KEY_STORAGE, nextApiKey);
+    localStorage.setItem(API_KEY_STORAGE, nextApiKey);
     setLoginError("");
     setError("");
     setApiKey(nextApiKey);
   }, []);
 
   const logout = useCallback(() => {
+    localStorage.removeItem(API_KEY_STORAGE);
     sessionStorage.removeItem(API_KEY_STORAGE);
     queryClient.clear();
     setApiKey("");
@@ -149,12 +156,28 @@ function App() {
   }, []);
 
   const rejectApiKey = useCallback((message = "API Key 无效，请重新输入。") => {
+    localStorage.removeItem(API_KEY_STORAGE);
     sessionStorage.removeItem(API_KEY_STORAGE);
     queryClient.clear();
     setApiKey("");
     setLoginError(message);
     setError("");
     setSelectedRunId(null);
+  }, []);
+
+  useEffect(() => {
+    const syncLogin = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage) return;
+      if (event.key !== API_KEY_STORAGE && event.key !== null) return;
+      queryClient.clear();
+      setApiKey(localStorage.getItem(API_KEY_STORAGE) ?? "");
+      setSelectedConfigProfileId("");
+      setSelectedRunId(null);
+      setLoginError("");
+      setError("");
+    };
+    globalThis.addEventListener("storage", syncLogin);
+    return () => globalThis.removeEventListener("storage", syncLogin);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -213,6 +236,17 @@ function App() {
 
   if (!apiKey) return <LoginView onLogin={saveApiKey} error={loginError} />;
 
+  if (!advanced) {
+    return (
+      <DailyDesk
+        apiKey={apiKey}
+        runs={runs}
+        onAdvanced={() => setAdvanced(true)}
+        onRefresh={refresh}
+      />
+    );
+  }
+
   return (
     <AppShell
       className="tp-surface text-[#0f172a]"
@@ -256,6 +290,9 @@ function App() {
           </Group>
 
           <Group gap={6} wrap="nowrap">
+            <Button size="sm" onClick={() => setAdvanced(false)}>
+              返回日常工作台
+            </Button>
             <label className="hidden h-[32px] items-center gap-2 rounded-md border border-[#cbd5e1] bg-white px-2.5 text-xs text-[#475569] sm:flex">
               <input
                 className="size-3.5 accent-[#2563eb]"
