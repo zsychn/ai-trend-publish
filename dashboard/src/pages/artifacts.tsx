@@ -147,6 +147,7 @@ export function ArtifactPreview(
   useEffect(() => {
     if (!artifact) return;
     let nextObjectUrl = "";
+    let active = true;
     setLoading(true);
     setError("");
     setContent("");
@@ -157,18 +158,26 @@ export function ArtifactPreview(
     )
       .then(async (response) => {
         const blob = await response.blob();
-        if (artifact.contentType.includes("image/")) {
-          nextObjectUrl = URL.createObjectURL(blob);
-          setObjectUrl(nextObjectUrl);
+        if (!active) return;
+        nextObjectUrl = URL.createObjectURL(blob);
+        setObjectUrl(nextObjectUrl);
+        if (
+          artifact.contentType.includes("image/") ||
+          artifact.contentType.includes("zip")
+        ) {
           return;
         }
-        setContent(await blob.text());
+        const text = await blob.text();
+        if (active) setContent(text);
       })
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : String(err))
-      )
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
+      active = false;
       if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
     };
   }, [artifact, apiKey]);
@@ -176,6 +185,7 @@ export function ArtifactPreview(
   const isHtml = artifact?.contentType.includes("html") ?? false;
   const isJson = artifact?.contentType.includes("json") ?? false;
   const isImage = artifact?.contentType.includes("image/") ?? false;
+  const isZip = artifact?.contentType.includes("zip") ?? false;
 
   return (
     <Drawer
@@ -191,6 +201,11 @@ export function ArtifactPreview(
           <div className="tp-muted mb-3 truncate text-xs">
             {artifact.contentType} · {artifact.key}
           </div>
+          {isHtml && (
+            <p className="tp-muted mb-3 text-sm">
+              需要复制正文时，请先下载 HTML 文件并打开。
+            </p>
+          )}
           <div className="min-h-0 flex-1 overflow-auto rounded-md bg-[#f8fafc] p-3">
             {loading && <EmptyState>正在加载产物...</EmptyState>}
             {error && (
@@ -213,13 +228,25 @@ export function ArtifactPreview(
                 sandbox=""
               />
             )}
-            {!loading && !error && !isImage && !isHtml && (
+            {!loading && !error && isZip && (
+              <EmptyState>发布包已就绪，点击下方“下载文件”保存。</EmptyState>
+            )}
+            {!loading && !error && !isImage && !isHtml && !isZip && (
               <pre className="tp-code min-h-[74vh] overflow-auto rounded-md border p-4 text-xs leading-5">
                 {isJson ? prettyJson(content) : content}
               </pre>
             )}
           </div>
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex items-center justify-end gap-4">
+            {!loading && !error && objectUrl && (
+              <a
+                className="text-sm text-blue-600 underline"
+                href={objectUrl}
+                download={artifact.key.split("/").pop()}
+              >
+                下载文件
+              </a>
+            )}
             <Button variant="ghost" onClick={onClose}>关闭</Button>
           </div>
         </div>
